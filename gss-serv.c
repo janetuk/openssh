@@ -55,22 +55,7 @@ extern ServerOptions options;
 
 static ssh_gssapi_client gssapi_client =
     { GSS_C_EMPTY_BUFFER, GSS_C_EMPTY_BUFFER,
-    GSS_C_NO_CREDENTIAL, GSS_C_NO_NAME,  NULL, {NULL, NULL, NULL}, 0, 0};
-
-ssh_gssapi_mech gssapi_null_mech =
-    { NULL, NULL, {0, NULL}, NULL, NULL, NULL, NULL, NULL};
-
-#ifdef KRB5
-extern ssh_gssapi_mech gssapi_kerberos_mech;
-#endif
-
-ssh_gssapi_mech* supported_mechs[]= {
-#ifdef KRB5
-	&gssapi_kerberos_mech,
-#endif
-	&gssapi_null_mech,
-};
-
+      GSS_C_NO_CREDENTIAL, GSS_C_NO_NAME, {NULL, NULL, NULL}, 0, 0};
 
 /*
  * Acquire credentials for a server running on the current host.
@@ -152,27 +137,9 @@ ssh_gssapi_server_check_mech(Gssctxt **dum, gss_OID oid, const char *data,
 void
 ssh_gssapi_supported_oids(gss_OID_set *oidset)
 {
-	int i = 0;
 	OM_uint32 min_status;
-	int present;
-	gss_OID_set supported;
 
-	gss_create_empty_oid_set(&min_status, oidset);
-
-	if (GSS_ERROR(gss_indicate_mechs(&min_status, &supported)))
-		return;
-
-	while (supported_mechs[i]->name != NULL) {
-		if (GSS_ERROR(gss_test_oid_set_member(&min_status,
-		    &supported_mechs[i]->oid, supported, &present)))
-			present = 0;
-		if (present)
-			gss_add_oid_set_member(&min_status,
-			    &supported_mechs[i]->oid, oidset);
-		i++;
-	}
-
-	gss_release_oid_set(&min_status, &supported);
+	gss_indicate_mechs(&min_status, oidset);
 }
 
 
@@ -283,72 +250,16 @@ ssh_gssapi_parse_ename(Gssctxt *ctx, gss_buffer_t ename, gss_buffer_t name)
 OM_uint32
 ssh_gssapi_getclient(Gssctxt *ctx, ssh_gssapi_client *client)
 {
-	int i = 0;
-	int equal = 0;
-	gss_name_t new_name = GSS_C_NO_NAME;
-	gss_buffer_desc ename = GSS_C_EMPTY_BUFFER;
+	gss_buffer_desc ename;
 
-	if (options.gss_store_rekey && client->used && ctx->client_creds) {
-		if (client->mech->oid.length != ctx->oid->length ||
-		    (memcmp(client->mech->oid.elements,
-		     ctx->oid->elements, ctx->oid->length) !=0)) {
-			debug("Rekeyed credentials have different mechanism");
-			return GSS_S_COMPLETE;
-		}
-
-		if ((ctx->major = gss_inquire_cred_by_mech(&ctx->minor, 
-		    ctx->client_creds, ctx->oid, &new_name, 
-		    NULL, NULL, NULL))) {
-			ssh_gssapi_error(ctx);
-			return (ctx->major);
-		}
-
-		ctx->major = gss_compare_name(&ctx->minor, client->name, 
-		    new_name, &equal);
-
-		if (GSS_ERROR(ctx->major)) {
-			ssh_gssapi_error(ctx);
-			return (ctx->major);
-		}
- 
-		if (!equal) {
-			debug("Rekeyed credentials have different name");
-			return GSS_S_COMPLETE;
-		}
-
-		debug("Marking rekeyed credentials for export");
-
-		gss_release_name(&ctx->minor, &client->name);
-		gss_release_cred(&ctx->minor, &client->creds);
-		client->name = new_name;
-		client->creds = ctx->client_creds;
-        	ctx->client_creds = GSS_C_NO_CREDENTIAL;
-		client->updated = 1;
-		return GSS_S_COMPLETE;
-	}
-
-	client->mech = NULL;
-
-	while (supported_mechs[i]->name != NULL) {
-		if (supported_mechs[i]->oid.length == ctx->oid->length &&
-		    (memcmp(supported_mechs[i]->oid.elements,
-		    ctx->oid->elements, ctx->oid->length) == 0))
-			client->mech = supported_mechs[i];
-		i++;
-	}
-
-	if (client->mech == NULL)
-		return GSS_S_FAILURE;
-
-	if (ctx->client_creds &&
-	    (ctx->major = gss_inquire_cred_by_mech(&ctx->minor,
-	     ctx->client_creds, ctx->oid, &client->name, NULL, NULL, NULL))) {
+	if ((ctx->major = gss_display_name(&ctx->minor, ctx->client,
+	    &client->displayname, NULL))) {
 		ssh_gssapi_error(ctx);
 		return (ctx->major);
 	}
 
-	if ((ctx->major = gss_display_name(&ctx->minor, ctx->client,
-	    &client->displayname, NULL))) {
+	if ((ctx->major = gss_duplicate_name(&ctx->minor, ctx->client,
+					     &client->name))) {
 		ssh_gssapi_error(ctx);
 		return (ctx->major);
 	}
@@ -388,10 +299,11 @@ ssh_gssapi_cleanup_creds(void)
 void
 ssh_gssapi_storecreds(void)
 {
-	if (gssapi_client.mech && gssapi_client.mech->storecreds) {
-		(*gssapi_client.mech->storecreds)(&gssapi_client);
-	} else
-		debug("ssh_gssapi_storecreds: Not a GSSAPI mechanism");
+	OM_uint32 lmin;
+
+	gss_store_cred(&lmin, gssapi_client.creds,
+		       GSS_C_INITIATE, GSS_C_NO_OID,
+		       1, 1, NULL, NULL);
 }
 
 /* This allows GSSAPI methods to do things to the childs environment based
@@ -416,28 +328,25 @@ int
 ssh_gssapi_userok(char *user, struct passwd *pw)
 {
 	OM_uint32 lmin;
+	int userok = 0;
 
 	if (gssapi_client.exportedname.length == 0 ||
 	    gssapi_client.exportedname.value == NULL) {
 		debug("No suitable client data");
 		return 0;
 	}
-	if (gssapi_client.mech && gssapi_client.mech->userok)
-		if ((*gssapi_client.mech->userok)(&gssapi_client, user)) {
-			gssapi_client.used = 1;
-			gssapi_client.store.owner = pw;
-			return 1;
-		} else {
-			/* Destroy delegated credentials if userok fails */
-			gss_release_buffer(&lmin, &gssapi_client.displayname);
-			gss_release_buffer(&lmin, &gssapi_client.exportedname);
-			gss_release_cred(&lmin, &gssapi_client.creds);
-			memset(&gssapi_client, 0, sizeof(ssh_gssapi_client));
-			return 0;
-		}
-	else
-		debug("ssh_gssapi_userok: Unknown GSSAPI mechanism");
-	return (0);
+	if (GSS_ERROR(gss_userok(&lmin, gssapi_client.name, user, &userok)) ||
+	    userok == 0) {
+		/* Destroy delegated credentials if userok fails */
+		gss_release_buffer(&lmin, &gssapi_client.displayname);
+		gss_release_buffer(&lmin, &gssapi_client.exportedname);
+		gss_release_name(&lmin, &gssapi_client.name);
+		gss_release_cred(&lmin, &gssapi_client.creds);
+		memset(&gssapi_client, 0, sizeof(ssh_gssapi_client));
+		return 0;
+	}
+
+	return (userok);
 }
 
 /* These bits are only used for rekeying. The unpriviledged child is running 
