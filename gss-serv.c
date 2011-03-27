@@ -417,6 +417,7 @@ ssh_gssapi_rekey_creds() {
 int 
 ssh_gssapi_update_creds(ssh_gssapi_ccache *store) {
 	int ok = 0;
+	OM_uint32 major, lmin;
 
 	/* Check we've got credentials to store */
 	if (!gssapi_client.updated)
@@ -425,13 +426,12 @@ ssh_gssapi_update_creds(ssh_gssapi_ccache *store) {
 	gssapi_client.updated = 0;
 
 	temporarily_use_uid(gssapi_client.store.owner);
-	if (gssapi_client.mech && gssapi_client.mech->updatecreds)
-		ok = (*gssapi_client.mech->updatecreds)(store, &gssapi_client);
-	else
-		debug("No update function for this mechanism");
-
+	
+	major = gss_store_cred(&lmin, gssapi_client.creds,
+		       GSS_C_INITIATE, GSS_C_NO_OID,
+		       1, 1, NULL, NULL);	
 	restore_uid();
-
+	ok = (major == 0);
 	return ok;
 }
 
