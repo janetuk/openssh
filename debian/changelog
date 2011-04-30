@@ -1,3 +1,9 @@
+openssh (1:5.8p1-3+moonshot1) unstable; urgency=low
+
+  * Moonshot version
+
+ -- Colin Watson <hartmans@project-moonshot.org>  Sat, 30 Apr 2011 09:02:33 -0400
+
 openssh (1:5.8p1-3) unstable; urgency=low
 
   * Correct ssh-keygen instruction in the changelog for 1:5.7p1-1 (thanks,
