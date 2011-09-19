@@ -30,7 +30,7 @@
  */
 /*
  * Copyright (c) 2003,2004 Damien Miller <djm@mindrot.org>
- * Copyright (c) 2003,2004,2006 Darren Tucker <dtucker@zip.com.au>
+ * Copyright (c) 2003,2004 Darren Tucker <dtucker@zip.com.au>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -122,10 +122,6 @@ extern u_int utmp_len;
  */
 typedef pthread_t sp_pthread_t;
 #else
-#define pthread_create openssh_pthread_create
-#define pthread_exit openssh_pthread_exit
-#define pthread_cancel openssh_pthread_cancel
-#define pthread_join openssh_pthread_join
 typedef pid_t sp_pthread_t;
 #endif
 
@@ -276,49 +272,6 @@ sshpam_chauthtok_ruid(pam_handle_t *pamh, int flags)
 # define pam_chauthtok(a,b)	(sshpam_chauthtok_ruid((a), (b)))
 #endif
 
-struct passwd *
-sshpam_getpw(const char *user)
-{
-	struct passwd *pw;
-
-	if ((pw = getpwnam(user)) != NULL)
-		return(pw);
-
-	debug("PAM: faking passwd struct for user '%.100s'", user);
-	if ((pw = getpwnam(SSH_PRIVSEP_USER)) == NULL)
-		return NULL;
-	pw->pw_name = xstrdup(user);	/* XXX leak */
-	pw->pw_shell = "/bin/true";
-	pw->pw_gecos = "sshd fake PAM user";
-	return (pw);
-}
-
-void
-sshpam_check_userchanged(void)
-{
-	int sshpam_err;
-	struct passwd *pw;
-	const char *user;
-
-	debug("sshpam_check_userchanged");
-	sshpam_err = pam_get_item(sshpam_handle, PAM_USER, &user);
-	if (sshpam_err != PAM_SUCCESS)
-		fatal("PAM: could not get PAM_USER: %s",
-		    pam_strerror(sshpam_handle, sshpam_err));
-	if (strcmp(user, sshpam_authctxt->pw->pw_name) != 0) {
-		debug("PAM: user mapped from '%.100s' to '%.100s'",
-		    sshpam_authctxt->pw->pw_name, user);
-		if ((pw = getpwnam(user)) == NULL)
-			fatal("PAM: could not get passwd entry for user "
-			    "'%.100s' provided by PAM_USER", user);
-		pwfree(sshpam_authctxt->pw);
-		sshpam_authctxt->pw = pw;
-		sshpam_authctxt->valid = allowed_user(pw);
-		debug("PAM: user '%.100s' now %svalid", user,
-		    sshpam_authctxt->valid ? "" : "in");
-	}
-}
-
 void
 sshpam_password_change_required(int reqd)
 {
@@ -341,7 +294,7 @@ sshpam_password_change_required(int reqd)
 static void
 import_environments(Buffer *b)
 {
-	char *env, *user;
+	char *env;
 	u_int i, num_env;
 	int err;
 

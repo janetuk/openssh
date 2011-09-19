@@ -442,25 +442,6 @@ ssh_gssapi_userok(char *user, struct passwd *pw)
 	return (0);
 }
 
-
-/* Privileged */
-int
-ssh_gssapi_localname(char **user)
-{
-    	*user = NULL;
-	if (gssapi_client.displayname.length==0 || 
-	    gssapi_client.displayname.value==NULL) {
-		debug("No suitable client data");
-		return(0);;
-	}
-	if (gssapi_client.mech && gssapi_client.mech->localname) {
-		return((*gssapi_client.mech->localname)(&gssapi_client,user));
-	} else {
-		debug("Unknown client authentication type");
-	}
-	return(0);
-}
-
 /* These bits are only used for rekeying. The unpriviledged child is running 
  * as the user, the monitor is root.
  *

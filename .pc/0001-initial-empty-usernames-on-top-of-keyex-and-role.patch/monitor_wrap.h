@@ -62,8 +62,6 @@ OM_uint32 mm_ssh_gssapi_accept_ctx(Gssctxt *,
 int mm_ssh_gssapi_userok(char *user, struct passwd *);
 OM_uint32 mm_ssh_gssapi_checkmic(Gssctxt *, gss_buffer_t, gss_buffer_t);
 OM_uint32 mm_ssh_gssapi_sign(Gssctxt *, gss_buffer_t, gss_buffer_t);
-int mm_ssh_gssapi_localname(char **user);
-char *mm_ssh_gssapi_last_error(Gssctxt *ctxt, OM_uint32 *maj, OM_uint32 *min);
 int mm_ssh_gssapi_update_creds(ssh_gssapi_ccache *);
 #endif
 

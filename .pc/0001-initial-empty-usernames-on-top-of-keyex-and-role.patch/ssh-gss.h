@@ -137,7 +137,6 @@ int ssh_gssapi_check_mechanism(Gssctxt **, gss_OID, const char *, const char *);
 OM_uint32 ssh_gssapi_client_identity(Gssctxt *, const char *);
 int ssh_gssapi_credentials_updated(Gssctxt *);
 
-int ssh_gssapi_localname(char **name);
 /* In the server */
 typedef int ssh_gssapi_check_fn(Gssctxt **, gss_OID, const char *, 
     const char *);
