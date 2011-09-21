@@ -1,3 +1,9 @@
+openssh (1:5.9p1-1+moonshot1) unstable; urgency=low
+
+  * moonshot
+
+ -- Sam Hartman <hartmans@project-moonshot.org>  Wed, 21 Sep 2011 17:22:31 -0400
+
 openssh (1:5.9p1-1) unstable; urgency=low
 
   * New upstream release (http://www.openssh.org/txt/release-5.9).

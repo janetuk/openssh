@@ -3492,12 +3492,7 @@ AC_ARG_WITH([kerberos5],
 			blibpath="$blibpath:${KRB5ROOT}/lib"
 		fi
 
-                SAVELIBS=$LIBS
-		LIBS="$LIBS $K5LIBS"
- 		AC_CHECK_FUNCS(gss_localname gss_userok)
-		LIBS=$SAVELIBS
-
-		AC_CHECK_HEADERS([gssapi.h gssapi/gssapi.h gssapi/gssapi_ext.h])
+		AC_CHECK_HEADERS([gssapi.h gssapi/gssapi.h])
 		AC_CHECK_HEADERS([gssapi_krb5.h gssapi/gssapi_krb5.h])
 		AC_CHECK_HEADERS([gssapi_generic.h gssapi/gssapi_generic.h])
 

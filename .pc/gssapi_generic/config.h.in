@@ -482,9 +482,6 @@
 /* Define to 1 if you have the <gssapi_generic.h> header file. */
 #undef HAVE_GSSAPI_GENERIC_H
 
-/* Define to 1 if you have the <gssapi/gssapi_ext.h> header file. */
-#undef HAVE_GSSAPI_GSSAPI_EXT_H
-
 /* Define to 1 if you have the <gssapi/gssapi_generic.h> header file. */
 #undef HAVE_GSSAPI_GSSAPI_GENERIC_H
 
@@ -499,12 +496,6 @@
 
 /* Define to 1 if you have the <gssapi_krb5.h> header file. */
 #undef HAVE_GSSAPI_KRB5_H
-
-/* Define to 1 if you have the `gss_localname' function. */
-#undef HAVE_GSS_LOCALNAME
-
-/* Define to 1 if you have the `gss_userok' function. */
-#undef HAVE_GSS_USEROK
 
 /* Define if HEADER.ad exists in arpa/nameser.h */
 #undef HAVE_HEADER_AD

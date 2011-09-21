@@ -2,6 +2,7 @@
 gssapi.patch
 
 # SELinux
+gssapi_generic
 selinux-role.patch
 
 # Key blacklisting
@@ -42,3 +43,4 @@ auth-log-verbosity.patch
 gnome-ssh-askpass2-icon.patch
 debian-config.patch
 0001-initial-empty-usernames-on-top-of-keyex-and-role.patch
+

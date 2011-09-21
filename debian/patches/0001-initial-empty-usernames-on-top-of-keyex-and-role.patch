@@ -12,8 +12,8 @@ Subject: [PATCH] initial empty usernames on top of  keyex and role
 
 Index: openssh/auth-pam.c
 ===================================================================
---- openssh.orig/auth-pam.c	2011-09-21 18:55:39.000000000 -0400
-+++ openssh/auth-pam.c	2011-09-21 18:57:32.000000000 -0400
+--- openssh.orig/auth-pam.c	2011-09-21 18:41:08.000000000 -0400
++++ openssh/auth-pam.c	2011-09-21 18:45:34.000000000 -0400
 @@ -30,7 +30,7 @@
   */
  /*
@@ -95,8 +95,8 @@ Index: openssh/auth-pam.c
  
 Index: openssh/auth-pam.h
 ===================================================================
---- openssh.orig/auth-pam.h	2011-09-21 18:55:39.000000000 -0400
-+++ openssh/auth-pam.h	2011-09-21 18:57:32.000000000 -0400
+--- openssh.orig/auth-pam.h	2011-09-21 18:41:08.000000000 -0400
++++ openssh/auth-pam.h	2011-09-21 18:45:34.000000000 -0400
 @@ -46,5 +46,6 @@
  void sshpam_cleanup(void);
  int sshpam_auth_passwd(Authctxt *, const char *);
@@ -106,8 +106,8 @@ Index: openssh/auth-pam.h
  #endif /* USE_PAM */
 Index: openssh/auth2-gss.c
 ===================================================================
---- openssh.orig/auth2-gss.c	2011-09-21 18:55:39.000000000 -0400
-+++ openssh/auth2-gss.c	2011-09-21 18:57:32.000000000 -0400
+--- openssh.orig/auth2-gss.c	2011-09-21 18:41:21.000000000 -0400
++++ openssh/auth2-gss.c	2011-09-21 18:45:34.000000000 -0400
 @@ -47,6 +47,7 @@
  
  extern ServerOptions options;
@@ -288,8 +288,8 @@ Index: openssh/auth2-gss.c
  	userauth_gsskeyex,
 Index: openssh/auth2.c
 ===================================================================
---- openssh.orig/auth2.c	2011-09-21 18:57:31.000000000 -0400
-+++ openssh/auth2.c	2011-09-21 18:57:32.000000000 -0400
+--- openssh.orig/auth2.c	2011-09-21 18:45:33.000000000 -0400
++++ openssh/auth2.c	2011-09-21 18:45:34.000000000 -0400
 @@ -223,10 +223,30 @@
  	if (authctxt == NULL)
  		fatal("input_userauth_request: no authctxt");
@@ -400,8 +400,8 @@ Index: openssh/auth2.c
  	}
 Index: openssh/gss-serv.c
 ===================================================================
---- openssh.orig/gss-serv.c	2011-09-21 18:55:39.000000000 -0400
-+++ openssh/gss-serv.c	2011-09-21 18:57:32.000000000 -0400
+--- openssh.orig/gss-serv.c	2011-09-21 18:43:55.000000000 -0400
++++ openssh/gss-serv.c	2011-09-21 18:45:34.000000000 -0400
 @@ -495,6 +495,25 @@
  	return (0);
  }
@@ -430,8 +430,8 @@ Index: openssh/gss-serv.c
   *
 Index: openssh/monitor.c
 ===================================================================
---- openssh.orig/monitor.c	2011-09-21 18:57:31.000000000 -0400
-+++ openssh/monitor.c	2011-09-21 18:57:32.000000000 -0400
+--- openssh.orig/monitor.c	2011-09-21 18:45:33.000000000 -0400
++++ openssh/monitor.c	2011-09-21 18:45:34.000000000 -0400
 @@ -182,6 +182,8 @@
  int mm_answer_gss_userok(int, Buffer *);
  int mm_answer_gss_checkmic(int, Buffer *);
@@ -557,8 +557,8 @@ Index: openssh/monitor.c
  {
 Index: openssh/monitor.h
 ===================================================================
---- openssh.orig/monitor.h	2011-09-21 18:57:31.000000000 -0400
-+++ openssh/monitor.h	2011-09-21 18:57:32.000000000 -0400
+--- openssh.orig/monitor.h	2011-09-21 18:45:33.000000000 -0400
++++ openssh/monitor.h	2011-09-21 18:45:34.000000000 -0400
 @@ -52,6 +52,8 @@
  	MONITOR_REQ_GSSSETUP, MONITOR_ANS_GSSSETUP,
  	MONITOR_REQ_GSSSTEP, MONITOR_ANS_GSSSTEP,
@@ -570,8 +570,8 @@ Index: openssh/monitor.h
  	MONITOR_REQ_GSSUPCREDS, MONITOR_ANS_GSSUPCREDS,
 Index: openssh/monitor_wrap.c
 ===================================================================
---- openssh.orig/monitor_wrap.c	2011-09-21 18:57:31.000000000 -0400
-+++ openssh/monitor_wrap.c	2011-09-21 18:57:32.000000000 -0400
+--- openssh.orig/monitor_wrap.c	2011-09-21 18:45:33.000000000 -0400
++++ openssh/monitor_wrap.c	2011-09-21 18:45:34.000000000 -0400
 @@ -1306,6 +1306,54 @@
  	return (authenticated);
  }
@@ -629,8 +629,8 @@ Index: openssh/monitor_wrap.c
  {
 Index: openssh/monitor_wrap.h
 ===================================================================
---- openssh.orig/monitor_wrap.h	2011-09-21 18:57:31.000000000 -0400
-+++ openssh/monitor_wrap.h	2011-09-21 18:57:32.000000000 -0400
+--- openssh.orig/monitor_wrap.h	2011-09-21 18:45:33.000000000 -0400
++++ openssh/monitor_wrap.h	2011-09-21 18:45:34.000000000 -0400
 @@ -62,6 +62,8 @@
  int mm_ssh_gssapi_userok(char *user, struct passwd *);
  OM_uint32 mm_ssh_gssapi_checkmic(Gssctxt *, gss_buffer_t, gss_buffer_t);
@@ -642,8 +642,8 @@ Index: openssh/monitor_wrap.h
  
 Index: openssh/misc.c
 ===================================================================
---- openssh.orig/misc.c	2011-09-21 18:57:31.000000000 -0400
-+++ openssh/misc.c	2011-09-21 18:57:32.000000000 -0400
+--- openssh.orig/misc.c	2011-09-21 18:45:34.000000000 -0400
++++ openssh/misc.c	2011-09-21 18:45:34.000000000 -0400
 @@ -224,6 +224,20 @@
  	return copy;
  }
@@ -667,8 +667,8 @@ Index: openssh/misc.c
   * Port must be >=0 and <=65535.
 Index: openssh/misc.h
 ===================================================================
---- openssh.orig/misc.h	2011-09-21 18:57:31.000000000 -0400
-+++ openssh/misc.h	2011-09-21 18:57:32.000000000 -0400
+--- openssh.orig/misc.h	2011-09-21 18:45:34.000000000 -0400
++++ openssh/misc.h	2011-09-21 18:45:34.000000000 -0400
 @@ -38,6 +38,7 @@
  void	 sock_set_v6only(int);
  
@@ -677,15 +677,3 @@ Index: openssh/misc.h
  const char *ssh_gai_strerror(int);
  
  typedef struct arglist arglist;
-Index: openssh/ssh-gss.h
-===================================================================
---- openssh.orig/ssh-gss.h	2011-09-21 18:58:35.000000000 -0400
-+++ openssh/ssh-gss.h	2011-09-21 18:58:49.000000000 -0400
-@@ -141,6 +141,7 @@
- OM_uint32 ssh_gssapi_client_identity(Gssctxt *, const char *);
- int ssh_gssapi_credentials_updated(Gssctxt *);
- 
-+int ssh_gssapi_localname(char **name);
- /* In the server */
- typedef int ssh_gssapi_check_fn(Gssctxt **, gss_OID, const char *, 
-     const char *);

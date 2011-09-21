@@ -1,4 +1,5 @@
 gssapi.patch
+gssapi_generic
 selinux-role.patch
 ssh-vulnkey.patch
 ssh1-keepalive.patch
