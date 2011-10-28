@@ -3497,6 +3497,7 @@ AC_ARG_WITH([kerberos5],
 		AC_CHECK_HEADERS([gssapi_generic.h gssapi/gssapi_generic.h])
 
 		LIBS="$LIBS $K5LIBS"
+AC_CHECK_FUNCS(gss_localname gss_userok)
 		AC_SEARCH_LIBS([k_hasafs], [kafs], [AC_DEFINE([USE_AFS], [1],
 			[Define this if you want to use libkafs' AFS support])])
 	fi
