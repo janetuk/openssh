@@ -686,7 +686,7 @@ userauth_gssapi(Authctxt *authctxt)
 	Gssctxt *gssctxt = NULL;
 	static gss_OID_set gss_supported = NULL;
 	static u_int mech = 0;
-	OM_uint32 min;
+	OM_uint32 maj, min;
 	int ok = 0;
 	const char *gss_host;
 
@@ -700,11 +700,21 @@ userauth_gssapi(Authctxt *authctxt)
 	/* Try one GSSAPI method at a time, rather than sending them all at
 	 * once. */
 
-	if (gss_supported == NULL)
-		if (GSS_ERROR(gss_indicate_mechs(&min, &gss_supported))) {
+	if (gss_supported == NULL) {
+		if (options.gss_mechanism_oid) {
+			maj = gss_create_empty_oid_set(&min, &gss_supported);
+			if (!GSS_ERROR(maj))
+				maj = gss_add_oid_set_member(&min,
+						     options.gss_mechanism_oid,
+						     &gss_supported);
+		} else {
+			maj = gss_indicate_mechs(&min, &gss_supported);
+		}
+		if (GSS_ERROR(maj)) {
 			gss_supported = NULL;
 			return 0;
 		}
+	}
 
 	/* Check to see if the mechanism is usable before we offer it */
 	while (mech < gss_supported->count && !ok) {

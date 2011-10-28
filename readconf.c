@@ -44,6 +44,9 @@
 #include "buffer.h"
 #include "kex.h"
 #include "mac.h"
+#if defined(GSSAPI)
+#include "ssh-gss.h"
+#endif
 
 /* Format of the configuration file:
 
@@ -130,7 +133,7 @@ typedef enum {
 	oEnableSSHKeysign, oRekeyLimit, oVerifyHostKeyDNS, oConnectTimeout,
 	oAddressFamily, oGssAuthentication, oGssDelegateCreds,
 	oGssTrustDns, oGssKeyEx, oGssClientIdentity, oGssRenewalRekey,
-	oGssServerIdentity, 
+	oGssServerIdentity, oGssPasswordPrompt, oGssMechanismOid,
 	oServerAliveInterval, oServerAliveCountMax, oIdentitiesOnly,
 	oSendEnv, oControlPath, oControlMaster, oControlPersist,
 	oHashKnownHosts,
@@ -177,6 +180,8 @@ static struct {
 	{ "gssapiclientidentity", oGssClientIdentity },
 	{ "gssapiserveridentity", oGssServerIdentity },
 	{ "gssapirenewalforcesrekey", oGssRenewalRekey },
+	{ "gssapipasswordprompt", oGssPasswordPrompt },
+	{ "gssapimechanismoid", oGssMechanismOid },
 #else
 	{ "gssapiauthentication", oUnsupported },
 	{ "gssapikeyexchange", oUnsupported },
@@ -184,6 +189,8 @@ static struct {
 	{ "gssapitrustdns", oUnsupported },
 	{ "gssapiclientidentity", oUnsupported },
 	{ "gssapirenewalforcesrekey", oUnsupported },
+	{ "gssapipasswordprompt", oUnsupported },
+	{ "gssapimechanismoid", oUnsupported },
 #endif
 	{ "fallbacktorsh", oDeprecated },
 	{ "usersh", oDeprecated },
@@ -260,6 +267,11 @@ static struct {
 
 	{ NULL, oBadOption }
 };
+
+#ifdef GSSAPI
+static gss_OID
+mechanism_oid(const char *arg);
+#endif
 
 /*
  * Adds a local TCP/IP port forward to options.  Never returns if there is an
@@ -516,6 +528,30 @@ parse_flag:
 	case oGssRenewalRekey:
 		intptr = &options->gss_renewal_rekey;
 		goto parse_flag;
+
+	case oGssPasswordPrompt:
+		intptr = &options->gss_password_prompt;
+		goto parse_flag;
+
+#ifdef GSSAPI
+	case oGssMechanismOid: {
+		OM_uint32 minor;
+		gss_OID oid;
+
+		arg = strdelim(&s);
+		if (!arg || *arg == '\0')
+			fatal("%.200s line %d: Missing argument.", filename, linenum);
+		oid = mechanism_oid(arg);
+		if (oid == GSS_C_NO_OID)
+			fatal("%.200s line %d: Bad GSS mechanism OID '%s'.",
+			    filename, linenum, arg ? arg : "<NONE>");
+		if (*activep && options->gss_mechanism_oid == GSS_C_NO_OID)
+			options->gss_mechanism_oid = oid;
+		else
+			gss_release_oid(&minor, &oid);
+		break;
+	}
+#endif
 
 	case oBatchMode:
 		intptr = &options->batch_mode;
@@ -1175,6 +1211,8 @@ initialize_options(Options * options)
 	options->gss_renewal_rekey = -1;
 	options->gss_client_identity = NULL;
 	options->gss_server_identity = NULL;
+	options->gss_password_prompt = -1;
+	options->gss_mechanism_oid = NULL;
 	options->password_authentication = -1;
 	options->kbd_interactive_authentication = -1;
 	options->kbd_interactive_devices = NULL;
@@ -1282,6 +1320,8 @@ fill_default_options(Options * options)
 		options->gss_trust_dns = 0;
 	if (options->gss_renewal_rekey == -1)
 		options->gss_renewal_rekey = 0;
+	if (options->gss_password_prompt == -1)
+		options->gss_password_prompt = 0;
 	if (options->password_authentication == -1)
 		options->password_authentication = 1;
 	if (options->kbd_interactive_authentication == -1)
@@ -1513,3 +1553,37 @@ parse_forward(Forward *fwd, const char *fwdspec, int dynamicfwd, int remotefwd)
 	}
 	return (0);
 }
+
+#ifdef GSSAPI
+static gss_OID
+mechanism_oid(const char *oidstr)
+{
+	OM_uint32 minor;
+	gss_buffer_desc oidBuf;
+	size_t oidstrLen, i;
+	char *p;
+	gss_OID ret = GSS_C_NO_OID;
+
+	oidstrLen = strlen(oidstr);
+
+	oidBuf.length = 2 + oidstrLen + 2;
+	oidBuf.value = xmalloc(oidBuf.length + 1);
+	if (oidBuf.value == NULL)
+		return NULL;
+
+	p = (char *)oidBuf.value;
+	*p++ = '{';
+	*p++ = ' ';
+	for (i = 0; i < oidstrLen; i++)
+		*p++ = oidstr[i] == '.' ? ' ' : oidstr[i];
+	*p++ = ' ';
+	*p++ = '}';
+	*p = '\0';
+
+	gss_str_to_oid(&minor, &oidBuf, &ret);
+
+	xfree(oidBuf.value);
+
+	return ret;
+}
+#endif

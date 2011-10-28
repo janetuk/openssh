@@ -42,12 +42,16 @@
 #include "cipher.h"
 #include "key.h"
 #include "kex.h"
+#include "misc.h"
+#include "ssh.h"
+#include "readconf.h"
 #include <openssl/evp.h>
 
 #include "ssh-gss.h"
 
 extern u_char *session_id2;
 extern u_int session_id2_len;
+extern Options options;
 
 typedef struct {
 	char *encoded;
@@ -62,6 +66,17 @@ typedef struct {
 Gssctxt *gss_kex_context = NULL;
 
 static ssh_gss_kex_mapping *gss_enc2oid = NULL;
+
+static char *gss_password = NULL;
+
+static void
+ssh_gssapi_cleanup_password(void)
+{
+	if (gss_password) {
+		memset(gss_password, 0, strlen(gss_password));
+		xfree(gss_password);
+	}
+}
 
 int 
 ssh_gssapi_oid_table_ok() {
@@ -78,9 +93,20 @@ ssh_gssapi_oid_table_ok() {
 char *
 ssh_gssapi_client_mechanisms(const char *host, const char *client) {
 	gss_OID_set gss_supported;
-	OM_uint32 min_status;
+	OM_uint32 maj_status, min_status;
 
-	if (GSS_ERROR(gss_indicate_mechs(&min_status, &gss_supported)))
+	if (options.gss_mechanism_oid) {
+		maj_status = gss_create_empty_oid_set(&min_status,
+						      &gss_supported);
+		if (!GSS_ERROR(maj_status))
+			maj_status = gss_add_oid_set_member(&min_status,
+							    options.gss_mechanism_oid,
+							    &gss_supported);
+	} else {
+		maj_status = gss_indicate_mechs(&min_status, &gss_supported);
+	}
+
+	if (GSS_ERROR(maj_status))
 		return NULL;
 
 	return(ssh_gssapi_kex_mechs(gss_supported, ssh_gssapi_check_mechanism,
@@ -398,18 +424,51 @@ ssh_gssapi_client_identity(Gssctxt *ctx, const char *name)
 	ctx->major = gss_import_name(&ctx->minor, &gssbuf,
 	    GSS_C_NT_USER_NAME, &gssname);
 
-	if (!ctx->major)
-		ctx->major = gss_acquire_cred(&ctx->minor, 
-		    gssname, 0, oidset, GSS_C_INITIATE, 
-		    &ctx->client_creds, NULL, NULL);
+	if (GSS_ERROR(ctx->major)) {
+		ssh_gssapi_error(ctx);
+		return ctx->major;
+	}
+
+	if (options.gss_password_prompt) {
+		char prompt[150];
+
+		if (!gss_password) {
+			snprintf(prompt, sizeof(prompt), "%.30s's password: ", name);
+			gss_password = read_passphrase(prompt, 0);
+
+			atexit(ssh_gssapi_cleanup_password);
+		}
+
+		gssbuf.value = gss_password;
+		gssbuf.length = strlen(gss_password);
+
+		ctx->major = gss_acquire_cred_with_password(&ctx->minor,
+							    gssname,
+							    &gssbuf,
+							    GSS_C_INDEFINITE,
+							    oidset,
+							    GSS_C_INITIATE,
+							    &ctx->client_creds,
+							    NULL,
+							    NULL);
+	} else {
+		ctx->major = gss_acquire_cred(&ctx->minor,
+					      gssname,
+					      GSS_C_INDEFINITE,
+					      oidset,
+      					      GSS_C_INITIATE,
+					      &ctx->client_creds,
+					      NULL,
+					      NULL);
+	}
 
 	gss_release_name(&status, &gssname);
 	gss_release_oid_set(&status, &oidset);
 
-	if (ctx->major)
+	if (GSS_ERROR(ctx->major))
 		ssh_gssapi_error(ctx);
 
-	return(ctx->major);
+	return ctx->major;
 }
 
 OM_uint32
@@ -462,8 +521,12 @@ ssh_gssapi_check_mechanism(Gssctxt **ctx, gss_OID oid, const char *host,
 	if (ctx == NULL)
 		ctx = &intctx;
 
-	/* RFC 4462 says we MUST NOT do SPNEGO */
-	if (oid->length == spnego_oid.length && 
+	/*
+	 * RFC 4462 says we MUST NOT do SPNEGO, but we relax that if
+	 * the SPNEGO mechanism was explicitly specified by the user.
+	 */
+	if (options.gss_mechanism_oid == GSS_C_NO_OID &&
+	    oid->length == spnego_oid.length && 
 	    (memcmp(oid->elements, spnego_oid.elements, oid->length) == 0))
 		return 0; /* false */
 
@@ -545,5 +608,4 @@ ssh_gssapi_credentials_updated(Gssctxt *ctxt) {
 
 	return 0;
 }
-
 #endif /* GSSAPI */
