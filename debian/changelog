@@ -1,3 +1,9 @@
+openssh (1:5.9p1-5+moonshot1) unstable; urgency=low
+
+  * Moonshot support
+
+ -- Colin Watson <cjwatson@debian.org>  Wed, 16 May 2012 15:01:28 -0400
+
 openssh (1:5.9p1-5) unstable; urgency=low
 
   * Use dpkg-buildflags, including for hardening support; drop use of
