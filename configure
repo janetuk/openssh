@@ -8779,7 +8779,7 @@ if test -z "$ac_cv_path_PKGCONFIG"; then
 set dummy pkg-config; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_ac_pt_PKGCONFIG+:} false; then :
+if test "${ac_cv_path_ac_pt_PKGCONFIG+set}" = set; then :
   $as_echo_n "(cached) " >&6
 else
   case $ac_pt_PKGCONFIG in
