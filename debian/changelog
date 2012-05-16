@@ -1,3 +1,37 @@
+openssh (1:5.9p1-5) unstable; urgency=low
+
+  * Use dpkg-buildflags, including for hardening support; drop use of
+    hardening-includes.
+  * Fix cross-building:
+    - Allow using a cross-architecture pkg-config.
+    - Pass default LDFLAGS to contrib/Makefile.
+    - Allow dh_strip to strip gnome-ssh-askpass, rather than calling
+      'install -s'.
+
+ -- Colin Watson <cjwatson@debian.org>  Mon, 02 Apr 2012 11:20:33 +0100
+
+openssh (1:5.9p1-4) unstable; urgency=low
+
+  * Disable OpenSSL version check again, as its SONAME is sufficient
+    nowadays (closes: #664383).
+
+ -- Colin Watson <cjwatson@debian.org>  Mon, 19 Mar 2012 11:06:30 +0000
+
+openssh (1:5.9p1-3) unstable; urgency=low
+
+  * debconf template translations:
+    - Update Polish (thanks, Michał Kułach; closes: #659829).
+  * Ignore errors writing to console in init script (closes: #546743).
+  * Move ssh-krb5 to Section: oldlibs.
+
+ -- Colin Watson <cjwatson@debian.org>  Fri, 24 Feb 2012 08:56:18 +0000
+
+openssh (1:5.9p1-2) unstable; urgency=low
+
+  * Mark openssh-client and openssh-server as Multi-Arch: foreign.
+
+ -- Colin Watson <cjwatson@debian.org>  Wed, 09 Nov 2011 02:06:48 +0000
+
 openssh (1:5.9p1-1+moonshot1) unstable; urgency=low
 
   * moonshot
