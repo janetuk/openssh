@@ -1,3 +1,9 @@
+openssh (1:5.9p1-5+moonshot2) unstable; urgency=low
+
+  * Add no integrity option
+
+ -- Colin Watson <cjwatson@debian.org>  Fri, 26 Oct 2012 20:43:04 -0400
+
 openssh (1:5.9p1-5+moonshot1) unstable; urgency=low
 
   * Moonshot support
