@@ -1,0 +1,130 @@
+Index: openssh/gss-serv.c
+===================================================================
+--- openssh.orig/gss-serv.c	2012-10-26 20:34:21.000000000 -0400
++++ openssh/gss-serv.c	2012-10-26 20:36:26.000000000 -0400
+@@ -281,10 +281,13 @@
+ 	 * we flag the user as also having been authenticated
+ 	 */
+ 
+-	if (((flags == NULL) || ((*flags & GSS_C_MUTUAL_FLAG) &&
+-	    (*flags & GSS_C_INTEG_FLAG))) && (ctx->major == GSS_S_COMPLETE)) {
+-		if (ssh_gssapi_getclient(ctx, &gssapi_client))
++	if (ctx->major == GSS_S_COMPLETE) {
++		if (options.gss_require_mic &&
++		    ((flags == NULL) || !(*flags & GSS_C_INTEG_FLAG))) {
++			debug("GSSAPIRequireMIC true and integrity protection not supported so gssapi-with-mic fails.");
++		} else if (ssh_gssapi_getclient(ctx, &gssapi_client)) {
+ 			fatal("Couldn't convert client name");
++		}
+ 	}
+ 
+ 	return (status);
+Index: openssh/servconf.c
+===================================================================
+--- openssh.orig/servconf.c	2012-10-26 20:34:21.000000000 -0400
++++ openssh/servconf.c	2012-10-26 20:39:34.000000000 -0400
+@@ -98,6 +98,7 @@
+ 	options->kerberos_get_afs_token = -1;
+ 	options->gss_authentication=-1;
+ 	options->gss_keyex = -1;
++	options->gss_require_mic = -1;
+ 	options->gss_cleanup_creds = -1;
+ 	options->gss_strict_acceptor = -1;
+ 	options->gss_store_rekey = -1;
+@@ -232,6 +233,8 @@
+ 		options->gss_authentication = 0;
+ 	if (options->gss_keyex == -1)
+ 		options->gss_keyex = 0;
++	if (options->gss_require_mic == -1)
++		options->gss_require_mic = 1;
+ 	if (options->gss_cleanup_creds == -1)
+ 		options->gss_cleanup_creds = 1;
+ 	if (options->gss_strict_acceptor == -1)
+@@ -335,6 +338,7 @@
+ 	sClientAliveCountMax, sAuthorizedKeysFile,
+ 	sGssAuthentication, sGssCleanupCreds, sGssStrictAcceptor,
+ 	sGssKeyEx, sGssStoreRekey,
++	sGssReqMIC,
+ 	sAcceptEnv, sPermitTunnel,
+ 	sMatch, sPermitOpen, sForceCommand, sChrootDirectory,
+ 	sUsePrivilegeSeparation, sAllowAgentForwarding,
+@@ -404,6 +408,7 @@
+ 	{ "gssapistrictacceptorcheck", sGssStrictAcceptor, SSHCFG_GLOBAL },
+ 	{ "gssapikeyexchange", sGssKeyEx, SSHCFG_GLOBAL },
+ 	{ "gssapistorecredentialsonrekey", sGssStoreRekey, SSHCFG_GLOBAL },
++	{ "gssapirequiremic", sGssReqMIC, SSHCFG_GLOBAL },
+ #else
+ 	{ "gssapiauthentication", sUnsupported, SSHCFG_ALL },
+ 	{ "gssapicleanupcredentials", sUnsupported, SSHCFG_GLOBAL },
+@@ -411,6 +416,7 @@
+ 	{ "gssapistrictacceptorcheck", sUnsupported, SSHCFG_GLOBAL },
+ 	{ "gssapikeyexchange", sUnsupported, SSHCFG_GLOBAL },
+ 	{ "gssapistorecredentialsonrekey", sUnsupported, SSHCFG_GLOBAL },
++	{ "gssapirequiremic", sUnsupported, SSHCFG_GLOBAL },
+ #endif
+ 	{ "gssusesessionccache", sUnsupported, SSHCFG_GLOBAL },
+ 	{ "gssapiusesessioncredcache", sUnsupported, SSHCFG_GLOBAL },
+@@ -996,6 +1002,10 @@
+ 		intptr = &options->gss_keyex;
+ 		goto parse_flag;
+ 
++	case sGssReqMIC:
++		intptr = &options->gss_require_mic;
++		goto parse_flag;
++
+ 	case sGssCleanupCreds:
+ 		intptr = &options->gss_cleanup_creds;
+ 		goto parse_flag;
+@@ -1771,6 +1781,7 @@
+ #ifdef GSSAPI
+ 	dump_cfg_fmtint(sGssAuthentication, o->gss_authentication);
+ 	dump_cfg_fmtint(sGssKeyEx, o->gss_keyex);
++	dump_cfg_fmtint(sGssReqMIC, o->gss_require_mic);
+ 	dump_cfg_fmtint(sGssCleanupCreds, o->gss_cleanup_creds);
+ 	dump_cfg_fmtint(sGssStrictAcceptor, o->gss_strict_acceptor);
+ 	dump_cfg_fmtint(sGssStoreRekey, o->gss_store_rekey);
+Index: openssh/servconf.h
+===================================================================
+--- openssh.orig/servconf.h	2012-10-26 20:34:21.000000000 -0400
++++ openssh/servconf.h	2012-10-26 20:36:26.000000000 -0400
+@@ -104,6 +104,7 @@
+ 						 * authenticated with Kerberos. */
+ 	int     gss_authentication;	/* If true, permit GSSAPI authentication */
+ 	int     gss_keyex;		/* If true, permit GSSAPI key exchange */
++	int     gss_require_mic;	/* If true, require GSS_C_INTEG_FLAG for gssapi-with-mic */
+ 	int     gss_cleanup_creds;	/* If true, destroy cred cache on logout */
+ 	int 	gss_strict_acceptor;	/* If true, restrict the GSSAPI acceptor name */
+ 	int 	gss_store_rekey;
+Index: openssh/sshd_config
+===================================================================
+--- openssh.orig/sshd_config	2012-10-26 20:34:21.000000000 -0400
++++ openssh/sshd_config	2012-10-26 20:36:26.000000000 -0400
+@@ -78,6 +78,7 @@
+ #GSSAPICleanupCredentials yes
+ #GSSAPIStrictAcceptorCheck yes
+ #GSSAPIKeyExchange no
++#GSSAPIRequireMIC yes
+ 
+ # Set this to 'yes' to enable PAM authentication, account processing, 
+ # and session processing. If this is enabled, PAM authentication will 
+Index: openssh/sshd_config.5
+===================================================================
+--- openssh.orig/sshd_config.5	2012-10-26 20:34:21.000000000 -0400
++++ openssh/sshd_config.5	2012-10-26 20:40:18.000000000 -0400
+@@ -467,6 +467,16 @@
+ The default is
+ .Dq yes .
+ Note that this option applies to protocol version 2 only.
++.It Cm GSSAPIRequireMIC
++Specifies whether to permit authentication using GSS-API mechanisms
++and/or contexts that do not support per-message integrity protection.
++If
++.Dq yes
++then the server will fail an otherwise valid gssapi-with-mic authentication
++if per-message integrity protection is not supported.
++The default is
++.Dq yes .
++Note that this option applies to protocol version 2 only.
+ .It Cm GSSAPIStrictAcceptorCheck
+ Determines whether to be strict about the identity of the GSSAPI acceptor 
+ a client authenticates against. If

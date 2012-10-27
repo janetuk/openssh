@@ -46,3 +46,4 @@ gnome-ssh-askpass2-icon.patch
 debian-config.patch
 0001-initial-empty-usernames-on-top-of-keyex-and-role.patch
 
+openssh-integ.patch
