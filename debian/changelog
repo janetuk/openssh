@@ -1,8 +1,9 @@
-openssh (1:5.9p1-5+moonshot2) unstable; urgency=low
+openssh (1:5.9p1-5+moonshot3) unstable; urgency=low
 
   * Add no integrity option
+  * Fix for gss_localname
 
- -- Colin Watson <cjwatson@debian.org>  Fri, 26 Oct 2012 20:43:04 -0400
+ -- Sam Hartman <hartmans@debian.org>  Sat, 01 Jun 2013 15:48:20 -0400
 
 openssh (1:5.9p1-5+moonshot1) unstable; urgency=low
 
