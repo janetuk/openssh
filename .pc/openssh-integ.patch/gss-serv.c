@@ -80,7 +80,7 @@ ssh_gssapi_generic_localname(ssh_gssapi_client *client,
   gss_buffer_desc lbuffer;
   OM_uint32 major, minor;
   *localname = NULL;
-  major = gss_localname(&minor, client->cred_name, NULL, &lbuffer);
+  major = gss_localname(&minor, client->ctx_name, NULL, &lbuffer);
   if (GSS_ERROR(major))
     return 0;
   if (lbuffer.value == NULL)
@@ -527,11 +527,6 @@ int
 ssh_gssapi_localname(char **user)
 {
     	*user = NULL;
-	if (gssapi_client.displayname.length==0 || 
-	    gssapi_client.displayname.value==NULL) {
-		debug("No suitable client data");
-		return(0);;
-	}
 	if (gssapi_client.mech && gssapi_client.mech->localname) {
 		return((*gssapi_client.mech->localname)(&gssapi_client,user));
 	} else {
