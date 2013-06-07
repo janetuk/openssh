@@ -1,7 +1,7 @@
 Index: openssh/gss-serv.c
 ===================================================================
---- openssh.orig/gss-serv.c	2012-10-26 20:34:21.000000000 -0400
-+++ openssh/gss-serv.c	2012-10-26 20:36:26.000000000 -0400
+--- openssh.orig/gss-serv.c	2013-06-07 11:29:27.930100684 -0400
++++ openssh/gss-serv.c	2013-06-07 11:31:08.690104607 -0400
 @@ -281,10 +281,13 @@
  	 * we flag the user as also having been authenticated
  	 */
@@ -21,8 +21,8 @@ Index: openssh/gss-serv.c
  	return (status);
 Index: openssh/servconf.c
 ===================================================================
---- openssh.orig/servconf.c	2012-10-26 20:34:21.000000000 -0400
-+++ openssh/servconf.c	2012-10-26 20:39:34.000000000 -0400
+--- openssh.orig/servconf.c	2013-06-07 11:27:23.126095830 -0400
++++ openssh/servconf.c	2013-06-07 11:31:08.690104607 -0400
 @@ -98,6 +98,7 @@
  	options->kerberos_get_afs_token = -1;
  	options->gss_authentication=-1;
@@ -85,8 +85,8 @@ Index: openssh/servconf.c
  	dump_cfg_fmtint(sGssStoreRekey, o->gss_store_rekey);
 Index: openssh/servconf.h
 ===================================================================
---- openssh.orig/servconf.h	2012-10-26 20:34:21.000000000 -0400
-+++ openssh/servconf.h	2012-10-26 20:36:26.000000000 -0400
+--- openssh.orig/servconf.h	2013-06-07 11:27:23.126095830 -0400
++++ openssh/servconf.h	2013-06-07 11:31:08.690104607 -0400
 @@ -104,6 +104,7 @@
  						 * authenticated with Kerberos. */
  	int     gss_authentication;	/* If true, permit GSSAPI authentication */
@@ -97,8 +97,8 @@ Index: openssh/servconf.h
  	int 	gss_store_rekey;
 Index: openssh/sshd_config
 ===================================================================
---- openssh.orig/sshd_config	2012-10-26 20:34:21.000000000 -0400
-+++ openssh/sshd_config	2012-10-26 20:36:26.000000000 -0400
+--- openssh.orig/sshd_config	2013-06-07 11:27:23.126095830 -0400
++++ openssh/sshd_config	2013-06-07 11:31:08.694104606 -0400
 @@ -78,6 +78,7 @@
  #GSSAPICleanupCredentials yes
  #GSSAPIStrictAcceptorCheck yes
@@ -109,8 +109,8 @@ Index: openssh/sshd_config
  # and session processing. If this is enabled, PAM authentication will 
 Index: openssh/sshd_config.5
 ===================================================================
---- openssh.orig/sshd_config.5	2012-10-26 20:34:21.000000000 -0400
-+++ openssh/sshd_config.5	2012-10-26 20:40:18.000000000 -0400
+--- openssh.orig/sshd_config.5	2013-06-07 11:27:23.126095830 -0400
++++ openssh/sshd_config.5	2013-06-07 11:31:08.694104606 -0400
 @@ -467,6 +467,16 @@
  The default is
  .Dq yes .
