@@ -88,7 +88,7 @@ ssh_gssapi_generic_localname(ssh_gssapi_client *client,
   *localname = xmalloc(lbuffer.length+1);
   if (*localname) {
     memcpy(*localname, lbuffer.value, lbuffer.length);
-    *localname[lbuffer.length] = '\0';
+    (*localname)[lbuffer.length] = '\0';
   }
   gss_release_buffer(&minor, &lbuffer);
   if (*localname)
