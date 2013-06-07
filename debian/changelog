@@ -1,3 +1,9 @@
+openssh (1:5.9p1-5+moonshot4) unstable; urgency=low
+
+  * Fix segfault in empty username
+
+ -- Sam Hartman <hartmans@mit.edu>  Fri, 07 Jun 2013 11:32:33 -0400
+
 openssh (1:5.9p1-5+moonshot3) unstable; urgency=low
 
   * Add no integrity option
